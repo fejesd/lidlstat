@@ -6,7 +6,7 @@
    Az első indítás néhány percig tart (Python, Chromium telepítése).
 2. Nyisd meg a **Ports** fület (alul, vagy ☰ menü → View → Ports), és a
    **„Távoli asztal (bejelentkezéshez)” (6080)** sornál a földgömb ikonnal nyisd meg.
-   Kattints a **Connect** gombra, jelszó: `lidl`.
+   Kattints a **Connect** gombra, jelszó: `lidlstat`.
 3. A Codespace **Terminal**jába írd be:
 
    ```bash
