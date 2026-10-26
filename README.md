@@ -54,6 +54,10 @@ Az adatbázis a `./data` mappába kerül.
 Ha nem csak otthoni hálózaton (pl. VPN-en vagy reverse proxy mögött) éred el, állíts be egy
 `APP_TOKEN`-t. Ekkor a webapp első megnyitáskor elkéri a kódot. A proxy mögött mindenképp HTTPS-t használj.
 
+## Futtatás GitHub Codespaces-ben
+
+Ha nincs saját géped vagy szervered (akár csak telefonról is): lásd [CODESPACES.md](CODESPACES.md).
+
 ## Beállítások (`.env`)
 
 | Változó | Alapérték | Leírás |

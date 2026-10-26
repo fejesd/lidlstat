@@ -1,0 +1,22 @@
+{
+  "name": "lidl-stats",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.13-bookworm",
+  "features": {
+    // Browser-accessible desktop (noVNC on port 6080) for the one-time Lidl login
+    "ghcr.io/devcontainers/features/desktop-lite:1": {
+      "password": "lidl",
+      "webPort": "6080"
+    }
+  },
+  "postCreateCommand": "bash scripts/codespace-setup.sh",
+  "postStartCommand": "bash scripts/codespace-start.sh",
+  "forwardPorts": [8000, 6080],
+  "portsAttributes": {
+    "8000": { "label": "Lidl statisztikák", "onAutoForward": "openBrowser" },
+    "6080": { "label": "Távoli asztal (bejelentkezéshez)" }
+  },
+  "customizations": {
+    "codespaces": { "openFiles": ["CODESPACES.md"] },
+    "vscode": { "extensions": ["ms-python.python", "charliermarsh.ruff"] }
+  }
+}
