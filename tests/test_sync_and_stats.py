@@ -54,6 +54,23 @@ def test_sync_then_stats(
 
     assert [p["name"] for p in stats.search_products(conn, "tej")] == ["TEJ 2,8% 1L"]
 
+    # Milk is the only product bought more than once: 299 (2025-12) -> 329 (2026-10)
+    changes = stats.price_changes(conn, everything)
+    assert changes["products"] == 1
+    assert changes["inflation"] == 10.0
+    assert [r["name"] for r in changes["increases"]] == ["TEJ 2,8% 1L"]
+    assert changes["increases"][0]["first_price"] == 299
+    assert changes["increases"][0]["last_price"] == 329
+    assert changes["decreases"] == []
+
+    # From September only 349 -> 329 remains
+    recent = stats.price_changes(conn, stats.Period(start="2026-09-01"))
+    assert recent["products"] == 1
+    assert recent["decreases"][0]["change_pct"] == -5.7
+
+    # Both October purchases are on the same day: too close to count as a price change
+    assert stats.price_changes(conn, stats.Period(start="2026-10-01"))["products"] == 0
+
 
 def test_incremental_sync_stops_paging(
     settings: Settings, fake_lidl: FakeLidl, client_factory: Callable[..., LidlClient]

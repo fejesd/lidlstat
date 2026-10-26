@@ -38,17 +38,32 @@
     </section>
 
     <section class="kpis" aria-label="Összesítés">
-      <div class="kpi"><span class="kpi-label">Költés</span><span class="kpi-value" id="k-spend">–</span></div>
-      <div class="kpi"><span class="kpi-label">Vásárlás</span><span class="kpi-value" id="k-count">–</span></div>
-      <div class="kpi"><span class="kpi-label">Átlagos kosár</span><span class="kpi-value" id="k-avg">–</span></div>
-      <div class="kpi"><span class="kpi-label">Megtakarítás</span><span class="kpi-value" id="k-save">–</span></div>
+      <div class="kpi"><span class="kpi-label">Költés</span><span class="kpi-value" id="k-spend">–</span><span class="kpi-delta" id="d-spend"></span></div>
+      <div class="kpi"><span class="kpi-label">Vásárlás</span><span class="kpi-value" id="k-count">–</span><span class="kpi-delta" id="d-count"></span></div>
+      <div class="kpi"><span class="kpi-label">Átlagos kosár</span><span class="kpi-value" id="k-avg">–</span><span class="kpi-delta" id="d-avg"></span></div>
+      <div class="kpi"><span class="kpi-label">Megtakarítás</span><span class="kpi-value" id="k-save">–</span><span class="kpi-delta" id="d-save"></span></div>
     </section>
+    <p id="delta-note" class="muted small delta-note"></p>
     <p id="mismatch-note" class="note small" hidden></p>
 
     <section class="card">
       <h2>Havi költés</h2>
       <div class="chart-box"><canvas id="monthly-chart" role="img" aria-label="Havi költés oszlopdiagram"></canvas></div>
       <details class="table-view"><summary>Táblázat</summary><table id="monthly-table"></table></details>
+    </section>
+
+    <section class="card">
+      <h2>Személyes infláció</h2>
+      <p class="hero-value" id="inflation-value">–</p>
+      <p class="muted small" id="inflation-note"></p>
+      <div class="card-head">
+        <h3>Árváltozások</h3>
+        <div class="segmented" id="change-dir" role="group" aria-label="Irány">
+          <button type="button" data-dir="up" aria-pressed="true">Drágult</button>
+          <button type="button" data-dir="down">Olcsóbb</button>
+        </div>
+      </div>
+      <ol id="change-list" class="bar-list"></ol>
     </section>
 
     <section class="card">

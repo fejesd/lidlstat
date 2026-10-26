@@ -7,6 +7,8 @@ const DAYS_LONG = ["hétfő", "kedd", "szerda", "csütörtök", "péntek", "szom
 const state = {
   period: "12m",
   topBy: "spend",
+  changeDir: "up",
+  priceChanges: null,
   currency: "HUF",
   receiptOffset: 0,
   charts: {},
@@ -43,7 +45,7 @@ function isoDay(d) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-function periodParams() {
+function periodRange() {
   const now = new Date();
   const start = new Date(now);
   switch (state.period) {
@@ -51,9 +53,52 @@ function periodParams() {
     case "3m": start.setMonth(now.getMonth() - 3); break;
     case "12m": start.setFullYear(now.getFullYear() - 1); break;
     case "ytd": start.setMonth(0, 1); break;
-    default: return "";
+    default: return null;
   }
-  return `start=${isoDay(start)}`;
+  return { start, end: now };
+}
+
+function periodParams() {
+  const range = periodRange();
+  return range ? `start=${isoDay(range.start)}` : "";
+}
+
+// The equally long period right before the selected one ("Idén": the same span last year).
+function previousPeriod() {
+  const range = periodRange();
+  if (!range) return null;
+  if (state.period === "ytd") {
+    const start = new Date(range.start); start.setFullYear(start.getFullYear() - 1);
+    const end = new Date(range.end); end.setFullYear(end.getFullYear() - 1);
+    return { start, params: `start=${isoDay(start)}&end=${isoDay(end)}`, label: "a tavalyi év azonos időszakához" };
+  }
+  const end = new Date(range.start); end.setDate(end.getDate() - 1);
+  const start = new Date(range.start);
+  if (state.period === "30d") start.setDate(start.getDate() - 30);
+  if (state.period === "3m") start.setMonth(start.getMonth() - 3);
+  if (state.period === "12m") start.setFullYear(start.getFullYear() - 1);
+  const labels = { "30d": "az előző 30 naphoz", "3m": "az előző 3 hónaphoz", "12m": "az előző 12 hónaphoz" };
+  return { start, params: `start=${isoDay(start)}&end=${isoDay(end)}`, label: labels[state.period] };
+}
+
+function pct(v) {
+  return `${v > 0 ? "+" : v < 0 ? "−" : ""}${num(Math.abs(v), 1)}%`;
+}
+
+function renderDeltas(current, previous, prev) {
+  const fields = { spend: "#d-spend", receipts: "#d-count", avg_basket: "#d-avg", savings: "#d-save" };
+  // Comparing against a period the data only partly covers would show huge, meaningless jumps.
+  const covered = prev && previous?.receipts && state.firstDate && state.firstDate.slice(0, 10) <= isoDay(prev.start);
+  $("#delta-note").textContent = covered ? `Változás ${prev.label} képest.` : "";
+  for (const [key, sel] of Object.entries(fields)) {
+    const node = $(sel);
+    const before = previous?.[key];
+    if (!covered || !before) { node.textContent = ""; continue; }
+    const change = ((current[key] - before) / before) * 100;
+    const arrow = Math.abs(change) < 0.5 ? "■" : change > 0 ? "▲" : "▼";
+    node.textContent = `${arrow} ${pct(change)}`;
+    node.title = `Előtte: ${key === "receipts" ? num(before) + " db" : money(before)}`;
+  }
 }
 
 function el(tag, attrs = {}, ...children) {
@@ -225,6 +270,41 @@ async function loadTop() {
   );
 }
 
+// ---------- price changes ----------
+
+async function loadPriceChanges() {
+  const p = periodParams();
+  state.priceChanges = await api(`/api/price-changes${p ? `?${p}` : ""}`);
+  renderPriceChanges();
+}
+
+function renderPriceChanges() {
+  const data = state.priceChanges;
+  if (!data) return;
+  const has = data.inflation !== null;
+  $("#inflation-value").textContent = has ? pct(data.inflation) : "–";
+  $("#inflation-note").textContent = has
+    ? `${data.products} többször vett termék polci ára alapján, a rájuk költött összeggel súlyozva ` +
+      `(${fmtDate(data.first_date, false)} – ${fmtDate(data.last_date, false)}).`
+    : "Ehhez az időszakhoz nincs elég adat: legalább 4 hét különbséggel kétszer vett termékek kellenek.";
+  const rows = (state.changeDir === "up" ? data.increases : data.decreases).slice(0, 10);
+  const target = $("#change-list");
+  if (!rows.length) {
+    target.replaceChildren(el("li", { class: "muted small" },
+      state.changeDir === "up" ? "Nincs drágult termék." : "Nincs olcsóbb lett termék."));
+    return;
+  }
+  target.replaceChildren(...rows.map((r) => {
+    const unit = r.is_weight ? "/kg" : "";
+    return el("li", {}, el("button", { type: "button", onclick: () => showPrice(r.name) },
+      el("div", { class: "bar-row" },
+        el("span", { class: "bar-name" }, r.name),
+        el("span", { class: "bar-val change-val" }, pct(r.change_pct))),
+      el("div", { class: "muted small" },
+        `${num(r.first_price)} → ${money(r.last_price)}${unit} · ${r.purchases}× vetted`)));
+  }));
+}
+
 // ---------- price tracker ----------
 
 let searchTimer;
@@ -326,25 +406,29 @@ async function loadReceipts(reset) {
 async function loadAll() {
   const p = periodParams();
   const q = p ? `?${p}` : "";
-  const [summary, monthly, heat, stores] = await Promise.all([
-    api(`/api/summary${q}`), api(`/api/monthly${q}`), api(`/api/weekday-hour${q}`), api(`/api/stores${q}`),
+  const prev = previousPeriod();
+  const [summary, previous, monthly, heat, stores] = await Promise.all([
+    api(`/api/summary${q}`), prev ? api(`/api/summary?${prev.params}`) : null,
+    api(`/api/monthly${q}`), api(`/api/weekday-hour${q}`), api(`/api/stores${q}`),
   ]);
   if (summary.currency) state.currency = summary.currency;
   $("#k-spend").textContent = money(summary.spend);
   $("#k-count").textContent = `${num(summary.receipts)} db`;
   $("#k-avg").textContent = money(summary.avg_basket);
   $("#k-save").textContent = money(summary.savings);
+  renderDeltas(summary, previous, prev);
   const note = $("#mismatch-note");
   note.hidden = !summary.mismatched;
   note.textContent = `⚠ ${summary.mismatched} blokk tételei nem adják ki pontosan a végösszeget, ezeknél a termékstatisztika pontatlan lehet.`;
   renderMonthly(monthly);
   renderHeatmap(heat);
   renderBarList($("#store-list"), stores, (r) => r.receipts, (r) => `${r.receipts}× · ${money(r.spend)}`, (r) => r.store || "Ismeretlen");
-  await Promise.all([loadTop(), loadReceipts(true)]);
+  await Promise.all([loadTop(), loadPriceChanges(), loadReceipts(true)]);
 }
 
 async function refreshStatus() {
   const s = await api("/api/status");
+  state.firstDate = s.first_date;
   const btn = $("#sync-btn");
   btn.classList.toggle("spinning", s.syncing);
   btn.disabled = s.syncing;
@@ -387,6 +471,14 @@ $("#top-by").addEventListener("click", (e) => {
   state.topBy = b.dataset.by;
   document.querySelectorAll("#top-by button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
   loadTop();
+});
+
+$("#change-dir").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  state.changeDir = b.dataset.dir;
+  document.querySelectorAll("#change-dir button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  renderPriceChanges();
 });
 
 $("#more-receipts").addEventListener("click", () => loadReceipts(false));

@@ -84,6 +84,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def status(conn: Conn) -> dict[str, Any]:
         return {
             "receipts": conn.execute("SELECT COUNT(*) FROM receipts").fetchone()[0],
+            "first_date": conn.execute("SELECT MIN(date) FROM receipts").fetchone()[0],
             "last_sync": db.get_kv(conn, "last_sync"),
             "last_sync_error": db.get_kv(conn, "last_sync_error") or "",
             "syncing": is_running(),
@@ -116,6 +117,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         limit: Annotated[int, Query(ge=1, le=100)] = 20,
     ) -> list[dict[str, Any]]:
         return stats.top_products(conn, period, by, limit)
+
+    @app.get("/api/price-changes")
+    def price_changes(conn: Conn, period: P) -> dict[str, Any]:
+        return stats.price_changes(conn, period)
 
     @app.get("/api/stores")
     def stores(conn: Conn, period: P) -> list[dict[str, Any]]:

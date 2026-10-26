@@ -27,6 +27,7 @@ def test_endpoints(settings: Settings, client_factory: Callable[..., LidlClient]
         assert http.get("/api/products?q=k").status_code == 200
         hist = http.get("/api/products/history", params={"name": "TEJ 2,8% 1L"}).json()
         assert len(hist) == 4
+        assert http.get("/api/price-changes").json()["inflation"] == 10.0
         receipts = http.get("/api/receipts").json()
         assert receipts[0]["id"] == "T3"
         assert len(http.get("/api/receipts/T3/items").json()) == 4
