@@ -1,0 +1,1 @@
+"""Lidl Plus vásárlási statisztikák."""

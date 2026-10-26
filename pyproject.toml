@@ -1,0 +1,53 @@
+[project]
+name = "lidl-stats"
+version = "0.1.0"
+description = "Mobilra optimalizált statisztikák a Lidl Plus vásárlásaidról"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "httpx>=0.27",
+    "tzdata>=2024.1",
+    "uvicorn[standard]>=0.30",
+]
+
+[project.optional-dependencies]
+login = ["playwright>=1.45"]
+
+[project.scripts]
+lidl-stats = "lidl_stats.main:run"
+lidl-stats-login = "lidl_stats.login:main"
+lidl-stats-sync = "lidl_stats.sync:main"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.11",
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lidl_stats"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["playwright.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

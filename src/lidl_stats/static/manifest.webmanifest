@@ -1,0 +1,11 @@
+{
+  "name": "Lidl statisztikák",
+  "short_name": "Lidl stat",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f4f2",
+  "theme_color": "#0050aa",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

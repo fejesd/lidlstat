@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Lidl statisztikák</title>
+  <meta name="theme-color" content="#0050aa">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Lidl stat">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-row">
+      <h1>Vásárlásaim</h1>
+      <button id="sync-btn" class="icon-btn" type="button" aria-label="Frissítés a Lidl Plusból">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M20 11a8 8 0 0 0-14.9-3M4 4v4h4M4 13a8 8 0 0 0 14.9 3M20 20v-4h-4"/></svg>
+      </button>
+    </div>
+    <p id="sync-status" class="muted small"></p>
+    <nav class="chips" id="period" aria-label="Időszak">
+      <button type="button" data-period="30d">30 nap</button>
+      <button type="button" data-period="3m">3 hónap</button>
+      <button type="button" data-period="ytd">Idén</button>
+      <button type="button" data-period="12m" aria-pressed="true">12 hónap</button>
+      <button type="button" data-period="all">Mind</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="empty" class="card" hidden>
+      <h2>Még nincs adat</h2>
+      <p id="empty-text"></p>
+    </section>
+
+    <section class="kpis" aria-label="Összesítés">
+      <div class="kpi"><span class="kpi-label">Költés</span><span class="kpi-value" id="k-spend">–</span></div>
+      <div class="kpi"><span class="kpi-label">Vásárlás</span><span class="kpi-value" id="k-count">–</span></div>
+      <div class="kpi"><span class="kpi-label">Átlagos kosár</span><span class="kpi-value" id="k-avg">–</span></div>
+      <div class="kpi"><span class="kpi-label">Megtakarítás</span><span class="kpi-value" id="k-save">–</span></div>
+    </section>
+    <p id="mismatch-note" class="note small" hidden></p>
+
+    <section class="card">
+      <h2>Havi költés</h2>
+      <div class="chart-box"><canvas id="monthly-chart" role="img" aria-label="Havi költés oszlopdiagram"></canvas></div>
+      <details class="table-view"><summary>Táblázat</summary><table id="monthly-table"></table></details>
+    </section>
+
+    <section class="card">
+      <h2>Mikor vásárolsz?</h2>
+      <div id="heatmap" class="heatmap" role="grid" aria-label="Vásárlások száma napok és órák szerint"></div>
+      <p id="heatmap-info" class="muted small">Koppints egy cellára a részletekért.</p>
+      <div class="legend-ramp small muted"><span>kevés</span><i></i><span>sok</span></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Top termékek</h2>
+        <div class="segmented" id="top-by" role="group" aria-label="Rendezés">
+          <button type="button" data-by="spend" aria-pressed="true">Összeg</button>
+          <button type="button" data-by="count">Gyakoriság</button>
+        </div>
+      </div>
+      <ol id="top-list" class="bar-list"></ol>
+    </section>
+
+    <section class="card">
+      <h2>Árfigyelő</h2>
+      <input id="product-search" type="search" placeholder="Termék keresése, pl. tej" autocomplete="off">
+      <ul id="product-suggest" class="suggest"></ul>
+      <div id="price-panel" hidden>
+        <h3 id="price-title"></h3>
+        <div class="price-stats small" id="price-stats"></div>
+        <div class="chart-box"><canvas id="price-chart" role="img" aria-label="Egységár alakulása"></canvas></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Boltok</h2>
+      <ol id="store-list" class="bar-list"></ol>
+    </section>
+
+    <section class="card">
+      <h2>Vásárlások</h2>
+      <ul id="receipt-list" class="receipts"></ul>
+      <button id="more-receipts" type="button" class="btn-secondary" hidden>Továbbiak</button>
+    </section>
+  </main>
+
+  <dialog id="token-dialog">
+    <form method="dialog">
+      <h2>Hozzáférési kód</h2>
+      <p class="small muted">A szerveren APP_TOKEN van beállítva. Add meg a kódot.</p>
+      <input id="token-input" type="password" autocomplete="current-password" required>
+      <button type="submit" class="btn-primary">Mentés</button>
+    </form>
+  </dialog>
+
+  <script src="vendor/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
